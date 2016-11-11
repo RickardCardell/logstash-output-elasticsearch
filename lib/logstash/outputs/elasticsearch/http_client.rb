@@ -116,7 +116,8 @@ module LogStash; module Outputs; class ElasticSearch;
           :request_timeout => timeout,
           :proxy => client_settings[:proxy]
         },
-        :transport_class => ::Elasticsearch::Transport::Transport::HTTP::Manticore
+        :transport_class => ::Elasticsearch::Transport::Transport::HTTP::Manticore,
+        :logger => @logger
       }
 
       if options[:user] && options[:password] then
