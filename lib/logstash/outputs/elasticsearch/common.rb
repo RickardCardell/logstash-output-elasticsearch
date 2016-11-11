@@ -170,8 +170,18 @@ module LogStash; module Outputs; class ElasticSearch;
 
     # Rescue retryable errors during bulk submission
     def safe_bulk(es_actions,actions)
+
+      # Grab the index names for sake of logging
+      indices = []
+      actions.each do |child|
+        indices << child[1][:_index]
+      end
+      indices = indices.uniq!
+      indices_str = indices.to_a().join(",")
+
       @logger.info(" bulk request",
                    :num_docs => actions.size,
+                   :indices => indices_str,
                    :body_size => JSON.generate(actions).size)
       @client.bulk(es_actions)
     rescue Manticore::SocketException, Manticore::SocketTimeout => e
@@ -183,6 +193,7 @@ module LogStash; module Outputs; class ElasticSearch;
         :error_message => e.message,
         :class => e.class.name,
         :num_docs => actions.size,
+        :indices => indices_str,
         :body_size => JSON.generate(actions).size
       )
       @logger.debug("Failed actions for last bad bulk request!", :actions => actions)
