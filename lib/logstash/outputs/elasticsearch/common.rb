@@ -1,5 +1,6 @@
 require "logstash/outputs/elasticsearch/template_manager"
 require "logstash/outputs/elasticsearch/buffer"
+require 'json'
 
 module LogStash; module Outputs; class ElasticSearch;
   module Common
@@ -169,6 +170,9 @@ module LogStash; module Outputs; class ElasticSearch;
 
     # Rescue retryable errors during bulk submission
     def safe_bulk(es_actions,actions)
+      @logger.info(" bulk request",
+                   :num_docs => actions.size,
+                   :body_size => JSON.generate(actions).size)
       @client.bulk(es_actions)
     rescue Manticore::SocketException, Manticore::SocketTimeout => e
       # If we can't even connect to the server let's just print out the URL (:hosts is actually a URL)
@@ -177,7 +181,9 @@ module LogStash; module Outputs; class ElasticSearch;
         "Attempted to send a bulk request to Elasticsearch configured at '#{@client.client_options[:hosts]}',"+
           " but Elasticsearch appears to be unreachable or down!",
         :error_message => e.message,
-        :class => e.class.name
+        :class => e.class.name,
+        :num_docs => actions.size,
+        :body_size => JSON.generate(actions).size
       )
       @logger.debug("Failed actions for last bad bulk request!", :actions => actions)
 
